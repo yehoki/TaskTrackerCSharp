@@ -61,6 +61,9 @@ Please use the 'help' command for more information");
             case "update":
                 UpdateTask(1, "A New Description");
                 break;
+            case "delete":
+                DeleteTask(1);
+                break;
             case "exit":
                 isRunning = false;
                 break;
@@ -135,12 +138,7 @@ void AddTask(string description)
     }
     JsonTask task = new(tasks.Count, description);
     tasks.Add(task);
-
-    string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
-    Console.WriteLine(json);
-    string jsonPath = GetJsonPath();
-    Console.WriteLine(jsonPath);
-    File.WriteAllText(jsonPath, json);
+    WriteTasksToFile(tasks);
     return;
 }
 
@@ -160,10 +158,27 @@ void UpdateTask(int id, string description)
     }
     foundTask.Description = description;
     foundTask.UpdatedAt = DateTime.Now;
+    WriteTasksToFile(tasks);
+}
+
+void DeleteTask(int id)
+{
+    List<JsonTask>? tasks = ReadJsonFile();
+    if(tasks == null)
+    {
+        return;
+    }
+    // Filters the list by the id
+    List<JsonTask> filteredTasks = tasks.Where(task => task.Id != id)
+                                        .ToList<JsonTask>();
+    WriteTasksToFile(filteredTasks);
+}
+
+
+void WriteTasksToFile(List<JsonTask> tasks)
+{
     string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
-    Console.WriteLine(json);
     string jsonPath = GetJsonPath();
-    Console.WriteLine(jsonPath);
     File.WriteAllText(jsonPath, json);
 }
 
