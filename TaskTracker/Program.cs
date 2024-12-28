@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-
+using TaskTracker.Services;
 
 
 
@@ -22,9 +22,11 @@
 //Ensure to handle errors and edge cases gracefully.
 
 
-static void main()
+void Main()
 {
-    while(true)
+    Helper helper = new();
+    bool isRunning = true;
+    while(isRunning)
     {
         Console.WriteLine("Please input a command");
         string input = Console.ReadLine();
@@ -36,21 +38,88 @@ static void main()
             break;
         }
 
-        String[] cmds = input.Split(' ');
-        foreach(string cmd in cmds)
+
+        string[] cmds = helper.ParseCommands(input);
+
+        // Check first command is correct, i.e. is task-cli
+        if(cmds[0] != "task-cli")
         {
-            Console.WriteLine(cmd);
+            Console.WriteLine(@"All valid must begin with 'task-cli'
+Please use the 'help' command for more information");
         }
 
+        //string jsonPath = GetJsonPath();
+        //Console.WriteLine(jsonPath);
+        //File.WriteAllText(jsonPath, "1234");
+
+
+        // Switching between commands
         switch(input)
         {
-            case "exit":
-            {
+            case "add":
+                AddTask();
                 break;
-            }
+            case "update":
+                break;
+            case "exit":
+                isRunning = false;
+                break;
+            case "help":
+                PrintHelpMessage();
+                break;
+            default:
+                break;
         }
 
     }
 }
 
-main();
+Boolean CheckCorrectBeginning(String firstCommand)
+{
+    return firstCommand == "task-cli";
+}
+
+
+void PrintHelpMessage()
+{
+    Console.WriteLine(@"Commands
+    1234
+1254
+444
+");
+}
+
+void ReadJsonFile()
+{
+    try
+    {
+        string jsonPath = GetJsonPath() ??
+            throw new Exception("The path of the JSON file is null");
+        using StreamReader reader = new(jsonPath);
+        string text = reader.ReadToEnd();
+        Console.WriteLine(text);
+    }
+    catch(Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+    }
+}
+
+String GetJsonPath()
+{
+    string workingDirectory = Environment.CurrentDirectory;
+    string? projectDirectory = Directory.GetParent(workingDirectory)?.
+                                         Parent?.Parent?.FullName;
+    string jsonPath = $"{projectDirectory}/tasks.json";
+    return jsonPath;
+}
+
+
+void AddTask()
+{
+    ReadJsonFile();
+    return;
+}
+
+
+Main();
