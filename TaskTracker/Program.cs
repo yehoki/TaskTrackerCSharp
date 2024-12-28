@@ -59,6 +59,7 @@ Please use the 'help' command for more information");
                 AddTask("New Task");
                 break;
             case "update":
+                UpdateTask(1, "A New Description");
                 break;
             case "exit":
                 isRunning = false;
@@ -141,6 +142,29 @@ void AddTask(string description)
     Console.WriteLine(jsonPath);
     File.WriteAllText(jsonPath, json);
     return;
+}
+
+void UpdateTask(int id, string description)
+{
+    List<JsonTask>? tasks = ReadJsonFile();
+    if(tasks == null)
+    {
+        return;
+    }
+    // Find the task
+    JsonTask? foundTask = tasks.Find(task => task.Id == id);
+    if(foundTask == null)
+    {
+        Console.WriteLine($"Could not find Task with Id: {id}");
+        return;
+    }
+    foundTask.Description = description;
+    foundTask.UpdatedAt = DateTime.Now;
+    string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
+    Console.WriteLine(json);
+    string jsonPath = GetJsonPath();
+    Console.WriteLine(jsonPath);
+    File.WriteAllText(jsonPath, json);
 }
 
 
