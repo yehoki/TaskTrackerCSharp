@@ -8,13 +8,11 @@ namespace TaskTracker.Models
             todo, inProgress, done
         };
 
-
-        public int Id;
-        public string Description;
-        public TaskStatus Status;
-        public DateTime CreatedAt;
-        public DateTime UpdatedAt;
-
+        public int Id { get; set; }
+        public string Description { get; set; }
+        public TaskStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
         public JsonTask(int id, string description)
         {

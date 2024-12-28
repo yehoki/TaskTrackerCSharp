@@ -1,7 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
-using TaskTracker.Services;
-
-
+﻿using TaskTracker.Services;
+using TaskTracker.Models;
+using System.Text.Json;
 
 /// The application should run from the command line, accept user actions and inputs as arguments, and store the tasks in a JSON file. The user should be able to:
 //
@@ -29,7 +28,7 @@ void Main()
     while(isRunning)
     {
         Console.WriteLine("Please input a command");
-        string input = Console.ReadLine();
+        string? input = Console.ReadLine();
         Console.WriteLine(input);
 
         if(String.IsNullOrEmpty(input))
@@ -50,14 +49,14 @@ Please use the 'help' command for more information");
 
         //string jsonPath = GetJsonPath();
         //Console.WriteLine(jsonPath);
-        //File.WriteAllText(jsonPath, "1234");
+        //File.WriteAllText(jsonPath, "[]");
 
 
         // Switching between commands
         switch(input)
         {
             case "add":
-                AddTask();
+                AddTask("New Task");
                 break;
             case "update":
                 break;
@@ -74,10 +73,10 @@ Please use the 'help' command for more information");
     }
 }
 
-Boolean CheckCorrectBeginning(String firstCommand)
-{
-    return firstCommand == "task-cli";
-}
+//bool CheckCorrectBeginning(String firstCommand)
+//{
+//    return firstCommand == "task-cli";
+//}
 
 
 void PrintHelpMessage()
@@ -89,7 +88,7 @@ void PrintHelpMessage()
 ");
 }
 
-void ReadJsonFile()
+List<JsonTask>? ReadJsonFile()
 {
     try
     {
@@ -97,11 +96,22 @@ void ReadJsonFile()
             throw new Exception("The path of the JSON file is null");
         using StreamReader reader = new(jsonPath);
         string text = reader.ReadToEnd();
-        Console.WriteLine(text);
+        if(String.IsNullOrEmpty(text))
+        {
+            text = "[]";
+        }
+        List<JsonTask>? tasks = JsonSerializer.Deserialize<List<JsonTask>>(text);
+
+        //foreach(JsonTask task in tasks)
+        //{
+        //    Console.WriteLine(task.Id);
+        //};
+        return tasks;
     }
     catch(Exception ex)
     {
         Console.WriteLine($"Error: {ex}");
+        return null;
     }
 }
 
@@ -115,11 +125,24 @@ String GetJsonPath()
 }
 
 
-void AddTask()
+void AddTask(string description)
 {
-    ReadJsonFile();
+    List<JsonTask>? tasks = ReadJsonFile();
+    if(tasks == null)
+    {
+        return;
+    }
+    JsonTask task = new(tasks.Count, description);
+    tasks.Add(task);
+
+    string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
+    Console.WriteLine(json);
+    string jsonPath = GetJsonPath();
+    Console.WriteLine(jsonPath);
+    File.WriteAllText(jsonPath, json);
     return;
 }
+
 
 
 Main();
