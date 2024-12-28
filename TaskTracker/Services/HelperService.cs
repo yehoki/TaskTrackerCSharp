@@ -3,9 +3,9 @@ using TaskTracker.Models;
 using System.Text.RegularExpressions;
 namespace TaskTracker.Services
 {
-    public class Helper
+    public class HelperService
     {
-        public Helper()
+        public HelperService()
         {
         }
 

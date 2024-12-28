@@ -20,7 +20,8 @@ using System.Text.Json;
 //Do not use any external libraries or frameworks to build this project.
 //Ensure to handle errors and edge cases gracefully.
 
-Helper helper = new();
+HelperService helper = new();
+PrinterService printer = new();
 void Main()
 {
     bool isRunning = true;
@@ -65,9 +66,13 @@ Please use the 'help' command for more information");
                 isRunning = false;
                 break;
             case "help":
-                PrintHelpMessage();
+                printer.PrintHelpMessage();
+                break;
+            case "list":
+                PrintAllTasks();
                 break;
             default:
+                printer.PrintInvalidArgumentMessage();
                 break;
         }
 
@@ -87,11 +92,6 @@ List<JsonTask>? ReadJsonFile()
             text = "[]";
         }
         List<JsonTask>? tasks = JsonSerializer.Deserialize<List<JsonTask>>(text);
-
-        //foreach(JsonTask task in tasks)
-        //{
-        //    Console.WriteLine(task.Id);
-        //};
         return tasks;
     }
     catch(Exception ex)
@@ -100,10 +100,7 @@ List<JsonTask>? ReadJsonFile()
         return null;
     }
 }
-
-
-
-
+#region Create
 void AddTask(string[] cmds)
 {
     try
@@ -127,8 +124,8 @@ void AddTask(string[] cmds)
         Console.WriteLine(ex);
     }
 }
-
-
+#endregion
+#region Update
 void UpdateTask(string[] cmds)
 {
 
@@ -164,7 +161,8 @@ void UpdateTask(string[] cmds)
 
 
 }
-
+#endregion
+#region Delete
 void DeleteTask(string[] cmds)
 {
     try
@@ -188,7 +186,7 @@ void DeleteTask(string[] cmds)
         Console.WriteLine(ex);
     }
 }
-
+#endregion
 
 void WriteTasksToFile(List<JsonTask> tasks)
 {
@@ -197,17 +195,18 @@ void WriteTasksToFile(List<JsonTask> tasks)
     File.WriteAllText(jsonPath, json);
 }
 
-void PrintHelpMessage()
+void PrintAllTasks()
 {
-    Console.WriteLine(@"Please find below all possible commands:
-task-cli add [description]: Adds a new task, with description
-task-cli update [id] [description]: Updates task with specified Id, with the new description
-task-cli delete [id]: Removes task from list of tasks
-task-cli mark-progress [id]: Sets task to status InProgress
-task-cli mark-done [id]: Sets task to status Done
-task-cli list: Lists all tasks
-task-cli list-progress
-");
+    List<JsonTask>? tasks = ReadJsonFile();
+    if(tasks == null)
+    {
+        printer.PrintNoTasks();
+    }
+    printer.PrintTableHeader();
+    foreach(JsonTask task in tasks)
+    {
+        printer.PrintSingleTask(task);
+    }
 }
 
 Main();
