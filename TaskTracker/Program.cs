@@ -57,7 +57,7 @@ Please use the 'help' command for more information");
                 AddTask(cmds);
                 break;
             case "update":
-                UpdateTask(cmds);
+                UpdateTaskDescription(cmds);
                 break;
             case "delete":
                 DeleteTask(cmds);
@@ -68,8 +68,11 @@ Please use the 'help' command for more information");
             case "help":
                 printer.PrintHelpMessage();
                 break;
+            case "mark":
+                MarkTask(cmds);
+                break;
             case "list":
-                PrintAllTasks();
+                ListTasks(cmds);
                 break;
             default:
                 printer.PrintInvalidArgumentMessage();
@@ -100,6 +103,7 @@ List<JsonTask>? ReadJsonFile()
         return null;
     }
 }
+#region methods
 #region Create
 void AddTask(string[] cmds)
 {
@@ -126,9 +130,8 @@ void AddTask(string[] cmds)
 }
 #endregion
 #region Update
-void UpdateTask(string[] cmds)
+void UpdateTaskDescription(string[] cmds)
 {
-
     try
     {
         if(cmds.Length < 4)
@@ -159,7 +162,31 @@ void UpdateTask(string[] cmds)
         Console.WriteLine(ex);
     }
 
-
+}
+void UpdateTaskStatus(int id, JsonTask.TaskStatus taskStatus)
+{
+    try
+    {
+        List<JsonTask>? tasks = ReadJsonFile();
+        if(tasks == null)
+        {
+            return;
+        }
+        // Find the task
+        JsonTask? foundTask = tasks.Find(task => task.Id == id);
+        if(foundTask == null)
+        {
+            Console.WriteLine($"Could not find Task with Id: {id}");
+            return;
+        }
+        foundTask.Status = taskStatus;
+        foundTask.UpdatedAt = DateTime.Now;
+        WriteTasksToFile(tasks);
+    }
+    catch(Exception ex)
+    {
+        Console.WriteLine(ex);
+    }
 }
 #endregion
 #region Delete
@@ -187,18 +214,16 @@ void DeleteTask(string[] cmds)
     }
 }
 #endregion
-
 void WriteTasksToFile(List<JsonTask> tasks)
 {
     string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
     string jsonPath = helper.GetJsonPath();
     File.WriteAllText(jsonPath, json);
 }
-
 void PrintAllTasks()
 {
     List<JsonTask>? tasks = ReadJsonFile();
-    if(tasks == null)
+    if(tasks == null || tasks.Count == 0)
     {
         printer.PrintNoTasks();
     }
@@ -208,5 +233,77 @@ void PrintAllTasks()
         printer.PrintSingleTask(task);
     }
 }
+#endregion
 
+
+void MarkTask(string[] cmds)
+{
+    if(cmds.Length < 4)
+    {
+        throw new IndexOutOfRangeException("Argument for Task id and status needed");
+    }
+    int id = Int32.Parse(cmds[2]);
+    string status = cmds[3];
+    switch(status)
+    {
+        case "done":
+            UpdateTaskStatus(id, JsonTask.TaskStatus.done);
+            break;
+        case "in-progress":
+            UpdateTaskStatus(id, JsonTask.TaskStatus.inProgress);
+            break;
+        default:
+            Console.WriteLine($"'{status}' is not a valid task status");
+            break;
+    }
+}
+
+void ListTasks(string[] cmds)
+{
+    if(cmds.Length == 2)
+    {
+        PrintAllTasks();
+        return;
+    }
+
+    string listCommand = cmds[2];
+    switch(listCommand)
+    {
+        case "done":
+            ListTasksByStatus(JsonTask.TaskStatus.done);
+            break;
+        case "in-progress":
+            ListTasksByStatus(JsonTask.TaskStatus.inProgress);
+            break;
+        case "todo":
+            ListTasksByStatus(JsonTask.TaskStatus.todo);
+            break;
+        default:
+            break;
+    }
+    return;
+}
+
+void ListTasksByStatus(JsonTask.TaskStatus taskStatus)
+{
+    List<JsonTask>? tasks = ReadJsonFile();
+    if(tasks == null || tasks.Count == 0)
+    {
+        printer.PrintNoTasks();
+        return;
+    }
+    List<JsonTask>? filteredTasks = tasks?
+                                    .Where(task => task.Status == taskStatus)
+                                    .ToList();
+    if(filteredTasks == null || filteredTasks.Count == 0)
+    {
+        printer.PrintNoTasks(taskStatus);
+        return;
+    }
+    printer.PrintTableHeader();
+    foreach(JsonTask task in filteredTasks)
+    {
+        printer.PrintSingleTask(task);
+    }
+}
 Main();

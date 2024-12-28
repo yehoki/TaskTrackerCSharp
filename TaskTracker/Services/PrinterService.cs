@@ -34,6 +34,11 @@ task-cli list-progress
             Console.WriteLine("There are currently no tasks");
         }
 
+        public void PrintNoTasks(JsonTask.TaskStatus taskStatus)
+        {
+            Console.WriteLine($"There are currently no tasks with status {taskStatus}");
+        }
+
         public void PrintTableHeader()
         {
             string formattedString = String.Format("|{0,-5}|{1,-5}|{2,-5}|", "Id", "Description", "Status");

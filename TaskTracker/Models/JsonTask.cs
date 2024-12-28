@@ -1,11 +1,14 @@
 ﻿using System;
+
 namespace TaskTracker.Models
 {
     public class JsonTask
     {
         public enum TaskStatus
         {
-            todo, inProgress, done
+            todo,
+            inProgress,
+            done
         };
 
         public int Id { get; set; }
