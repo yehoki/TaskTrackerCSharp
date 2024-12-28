@@ -4,8 +4,8 @@ using System.Text.Json;
 
 /// The application should run from the command line, accept user actions and inputs as arguments, and store the tasks in a JSON file. The user should be able to:
 //
-//Add, Update, and Delete tasks
-//Mark a task as in progress or done
+//Add, Update, and Delete tasks - Done
+//Mark a task as in progress or done - 
 //List all tasks
 //List all tasks that are done
 //List all tasks that are not done
@@ -20,23 +20,19 @@ using System.Text.Json;
 //Do not use any external libraries or frameworks to build this project.
 //Ensure to handle errors and edge cases gracefully.
 
-
+Helper helper = new();
 void Main()
 {
-    Helper helper = new();
     bool isRunning = true;
     while(isRunning)
     {
-        Console.WriteLine("Please input a command");
+        Console.WriteLine("Please input a valid command");
         string? input = Console.ReadLine();
-        Console.WriteLine(input);
-
         if(String.IsNullOrEmpty(input))
         {
-            Console.WriteLine("Invalid Command");
+            Console.WriteLine("A command cannot be empty, please try again");
             break;
         }
-
 
         string[] cmds = helper.ParseCommands(input);
 
@@ -47,22 +43,23 @@ void Main()
 Please use the 'help' command for more information");
         }
 
-        //string jsonPath = GetJsonPath();
-        //Console.WriteLine(jsonPath);
-        //File.WriteAllText(jsonPath, "[]");
-
+        if(cmds.Length < 2)
+        {
+            Console.WriteLine("Try again");
+            continue;
+        }
 
         // Switching between commands
-        switch(input)
+        switch(cmds[1])
         {
             case "add":
-                AddTask("New Task");
+                AddTask(cmds);
                 break;
             case "update":
-                UpdateTask(1, "A New Description");
+                UpdateTask(cmds);
                 break;
             case "delete":
-                DeleteTask(1);
+                DeleteTask(cmds);
                 break;
             case "exit":
                 isRunning = false;
@@ -77,26 +74,11 @@ Please use the 'help' command for more information");
     }
 }
 
-//bool CheckCorrectBeginning(String firstCommand)
-//{
-//    return firstCommand == "task-cli";
-//}
-
-
-void PrintHelpMessage()
-{
-    Console.WriteLine(@"Commands
-    1234
-1254
-444
-");
-}
-
 List<JsonTask>? ReadJsonFile()
 {
     try
     {
-        string jsonPath = GetJsonPath() ??
+        string jsonPath = helper.GetJsonPath() ??
             throw new Exception("The path of the JSON file is null");
         using StreamReader reader = new(jsonPath);
         string text = reader.ReadToEnd();
@@ -119,69 +101,113 @@ List<JsonTask>? ReadJsonFile()
     }
 }
 
-String GetJsonPath()
+
+
+
+void AddTask(string[] cmds)
 {
-    string workingDirectory = Environment.CurrentDirectory;
-    string? projectDirectory = Directory.GetParent(workingDirectory)?.
-                                         Parent?.Parent?.FullName;
-    string jsonPath = $"{projectDirectory}/tasks.json";
-    return jsonPath;
+    try
+    {
+        if(cmds.Length < 3)
+        {
+            throw new IndexOutOfRangeException("Argument for Task description needed");
+        }
+        string description = cmds[2];
+        List<JsonTask>? tasks = ReadJsonFile();
+        if(tasks == null)
+        {
+            return;
+        }
+        JsonTask task = new(helper.GetHighestId(tasks) + 1, description ?? String.Empty);
+        tasks.Add(task);
+        WriteTasksToFile(tasks);
+    }
+    catch(Exception ex)
+    {
+        Console.WriteLine(ex);
+    }
 }
 
 
-void AddTask(string description)
+void UpdateTask(string[] cmds)
 {
-    List<JsonTask>? tasks = ReadJsonFile();
-    if(tasks == null)
+
+    try
     {
-        return;
+        if(cmds.Length < 4)
+        {
+            throw new IndexOutOfRangeException("Argument for Task id and description needed");
+        }
+        int id = Int32.Parse(cmds[2]);
+        string description = cmds[3];
+
+        List<JsonTask>? tasks = ReadJsonFile();
+        if(tasks == null)
+        {
+            return;
+        }
+        // Find the task
+        JsonTask? foundTask = tasks.Find(task => task.Id == id);
+        if(foundTask == null)
+        {
+            Console.WriteLine($"Could not find Task with Id: {id}");
+            return;
+        }
+        foundTask.Description = description;
+        foundTask.UpdatedAt = DateTime.Now;
+        WriteTasksToFile(tasks);
     }
-    JsonTask task = new(tasks.Count, description);
-    tasks.Add(task);
-    WriteTasksToFile(tasks);
-    return;
+    catch(Exception ex)
+    {
+        Console.WriteLine(ex);
+    }
+
+
 }
 
-void UpdateTask(int id, string description)
+void DeleteTask(string[] cmds)
 {
-    List<JsonTask>? tasks = ReadJsonFile();
-    if(tasks == null)
+    try
     {
-        return;
+        if(cmds.Length < 3)
+        {
+            throw new IndexOutOfRangeException("Argument for Task id needed");
+        }
+        int id = Int32.Parse(cmds[2]);
+        List<JsonTask>? tasks = ReadJsonFile();
+        if(tasks == null)
+        {
+            return;
+        }
+        List<JsonTask> filteredTasks = tasks.Where(task => task.Id != id)
+                                            .ToList<JsonTask>();
+        WriteTasksToFile(filteredTasks);
     }
-    // Find the task
-    JsonTask? foundTask = tasks.Find(task => task.Id == id);
-    if(foundTask == null)
+    catch(Exception ex)
     {
-        Console.WriteLine($"Could not find Task with Id: {id}");
-        return;
+        Console.WriteLine(ex);
     }
-    foundTask.Description = description;
-    foundTask.UpdatedAt = DateTime.Now;
-    WriteTasksToFile(tasks);
-}
-
-void DeleteTask(int id)
-{
-    List<JsonTask>? tasks = ReadJsonFile();
-    if(tasks == null)
-    {
-        return;
-    }
-    // Filters the list by the id
-    List<JsonTask> filteredTasks = tasks.Where(task => task.Id != id)
-                                        .ToList<JsonTask>();
-    WriteTasksToFile(filteredTasks);
 }
 
 
 void WriteTasksToFile(List<JsonTask> tasks)
 {
     string json = JsonSerializer.Serialize<List<JsonTask>>(tasks);
-    string jsonPath = GetJsonPath();
+    string jsonPath = helper.GetJsonPath();
     File.WriteAllText(jsonPath, json);
 }
 
-
+void PrintHelpMessage()
+{
+    Console.WriteLine(@"Please find below all possible commands:
+task-cli add [description]: Adds a new task, with description
+task-cli update [id] [description]: Updates task with specified Id, with the new description
+task-cli delete [id]: Removes task from list of tasks
+task-cli mark-progress [id]: Sets task to status InProgress
+task-cli mark-done [id]: Sets task to status Done
+task-cli list: Lists all tasks
+task-cli list-progress
+");
+}
 
 Main();
